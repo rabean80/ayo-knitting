@@ -75,7 +75,7 @@ tr.cur td{background:var(--accent-soft);font-weight:700}
 <div class="wrap">
 <header>
   <h1>Ayo's Knitting</h1>
-  <p>대바늘 도안 도우미 · 1단계: 게이지 계산</p>
+  <p>대바늘 도안 도우미 · 게이지 계산 · <a href="chart.html" style="color:var(--accent)">무늬 차트 편집기 →</a></p>
 </header>
 
 <!-- 공통 게이지 -->
@@ -370,7 +370,7 @@ $('swList').addEventListener('click', e => {
   }
 });
 $('exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify({swatches: loadSw(), inputs: store.get(KEY_INPUTS, {})}, null, 2)], {type:'application/json'});
+  const blob = new Blob([JSON.stringify({swatches: loadSw(), inputs: store.get(KEY_INPUTS, {}), charts: store.get('knit.charts.v1', null)}, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = 'knitting-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
 });
@@ -382,7 +382,14 @@ $('importFile').addEventListener('change', e => {
     try{
       const data = JSON.parse(rd.result), cur = loadSw(), ids = new Set(cur.map(x => x.id));
       const add = (data.swatches || []).filter(x => x && x.id && !ids.has(x.id));
-      saveSw(cur.concat(add)); renderSw(); update(); alert(`${add.length}개 기록을 불러왔어요.`);
+      saveSw(cur.concat(add)); renderSw(); update();
+      let addC = 0;
+      if(data.charts && Array.isArray(data.charts.charts)){
+        const cdb = store.get('knit.charts.v1', null) || {charts:[], current:null}, cids = new Set(cdb.charts.map(c => c.id));
+        const newC = data.charts.charts.filter(c => c && c.id && !cids.has(c.id));
+        cdb.charts = cdb.charts.concat(newC); addC = newC.length; store.set('knit.charts.v1', cdb);
+      }
+      alert(`스와치 ${add.length}개, 무늬 ${addC}개를 불러왔어요.`);
     }catch(err){ alert('백업 파일을 읽지 못했어요.'); }
     e.target.value = '';
   };

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ayo's Knitting">
+<meta name="theme-color" content="#f7f3ee">
+<title>무늬 차트</title>
+<style>
+:root{
+  --bg:#f7f3ee;--card:#fffdf9;--ink:#2b2622;--muted:#7a6f66;--line:#e6ddd2;
+  --accent:#b5523b;--accent-soft:#f3e1d9;--ok:#4f7a5a;--ok-soft:#e2eee4;--warn:#9a6b12;--warn-soft:#f6ebd2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1917;--card:#26221f;--ink:#f1ebe4;--muted:#a89d92;--line:#3a332e;
+    --accent:#e08a6f;--accent-soft:#3a2a24;--ok:#8fc49c;--ok-soft:#24342a;--warn:#e0b45e;--warn-soft:#3a3020;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1917;--card:#26221f;--ink:#f1ebe4;--muted:#a89d92;--line:#3a332e;
+  --accent:#e08a6f;--accent-soft:#3a2a24;--ok:#8fc49c;--ok-soft:#24342a;--warn:#e0b45e;--warn-soft:#3a3020;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+.wrap{max-width:720px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+header{padding:8px 2px 14px}
+header h1{margin:0;font-size:22px;letter-spacing:-.3px}
+header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid.three{grid-template-columns:1fr 1fr 1fr}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:16px;font-family:inherit}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:6px 10px;font-size:13px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.note{font-size:13px;padding:10px 12px;border-radius:10px;margin:6px 0}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.tool{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px 10px;border-radius:9px;font-size:13px;font-family:inherit;cursor:pointer;min-width:44px}
+.tool.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tool:disabled{opacity:.35}
+.sep{width:1px;background:var(--line);margin:0 2px}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.opts select,.opts button{padding:8px;font-size:14px}
+.pal{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+.chip{display:flex;flex-direction:column;align-items:center;gap:3px}
+.chip button{width:42px;height:42px;border-radius:10px;border:2px solid var(--line);cursor:pointer;font-weight:700;font-size:14px;font-family:inherit}
+.chip.on button{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.chip input[type=color]{width:42px;height:24px;padding:0;border:0;background:none}
+.selbar{display:none;gap:6px;flex-wrap:wrap;margin-top:10px;padding:8px;border-radius:10px;background:var(--accent-soft)}
+.selbar.on{display:flex}
+.stage{overflow:auto;max-height:64vh;margin-top:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);-webkit-overflow-scrolling:touch}
+.stage canvas{display:block}
+.stage.draw canvas{touch-action:none}
+.info{font-size:13px;color:var(--muted);margin-top:6px;min-height:20px}
+.warns div{font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
+.warns div:last-child{border-bottom:0}
+.written .r{display:flex;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.written .r b{flex:0 0 92px;color:var(--muted);font-weight:600;font-size:13px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:8px}
+.sw{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;border:1px solid rgba(0,0,0,.2);margin-right:4px}
+#pvWrap canvas{display:block;border-radius:8px;max-width:100%}
+@media (max-width:420px){ .opts{grid-template-columns:1fr 1fr} .written .r b{flex-basis:78px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Ayo's Knitting</h1>
+  <p>무늬 차트 편집기 · <a href="index.html">← 게이지 계산</a></p>
+</header>
+
+<section class="card">
+  <h2>무늬</h2>
+  <select id="chartPick"></select>
+  <div class="tools" style="margin-top:10px">
+    <button class="btn ghost small" id="newChart">새 무늬</button>
+    <button class="btn ghost small" id="dupChart">복제</button>
+    <button class="btn ghost small" id="renChart">이름 변경</button>
+    <button class="btn ghost small" id="delChart">삭제</button>
+  </div>
+  <div style="margin-top:10px"><label>기본 무늬에서 추가</label><select id="libPick"></select></div>
+</section>
+
+<section class="card">
+  <div class="tools" id="toolBar">
+    <button class="tool on" data-tool="pen">✏️ 펜</button>
+    <button class="tool" data-tool="eraser">🩹 지우개</button>
+    <button class="tool" data-tool="fill">🪣 채우기</button>
+    <button class="tool" data-tool="line">╱ 직선</button>
+    <button class="tool" data-tool="rect">▬ 사각형</button>
+    <button class="tool" data-tool="select">⬚ 선택</button>
+    <button class="tool" data-tool="paste" id="pasteTool" disabled>📋 붙여넣기</button>
+    <span class="sep"></span>
+    <button class="tool" id="undoBtn">↶</button>
+    <button class="tool" id="redoBtn">↷</button>
+  </div>
+  <div class="opts">
+    <button class="tool" id="modeBtn">✋ 이동 모드</button>
+    <div class="row" style="gap:6px;flex-wrap:nowrap">
+      <button class="tool" id="zoomOut" style="flex:1">－</button>
+      <button class="tool" id="zoomIn" style="flex:1">＋</button>
+    </div>
+    <select id="symPick">
+      <option value="none">대칭 없음</option>
+      <option value="lr">좌우 대칭</option>
+      <option value="ud">상하 대칭</option>
+      <option value="both">4방 대칭</option>
+    </select>
+    <select id="viewPick">
+      <option value="square">정사각 칸</option>
+      <option value="gauge">게이지 비율</option>
+    </select>
+  </div>
+  <div class="pal" id="pal"></div>
+  <div class="hint">A는 바탕색이에요. 지우개는 A로 칠해요.</div>
+  <div class="selbar" id="selbar">
+    <button class="tool" id="selCopy">복사</button>
+    <button class="tool" id="selFlipH">좌우 반전</button>
+    <button class="tool" id="selFlipV">상하 반전</button>
+    <button class="tool" id="selFill">선택 색으로 채우기</button>
+    <button class="tool" id="selClear">지우기</button>
+    <button class="tool" id="selNone">선택 해제</button>
+  </div>
+  <div class="stage draw" id="stage"><canvas id="cv"></canvas></div>
+  <div class="info" id="info"></div>
+</section>
+
+<section class="card">
+  <h2>설정</h2>
+  <div class="grid three">
+    <div><label>가로 (코)</label><input id="setW" type="number" inputmode="numeric" min="1" max="120"></div>
+    <div><label>세로 (단)</label><input id="setH" type="number" inputmode="numeric" min="1" max="120"></div>
+    <div><label>&nbsp;</label><button class="btn" id="applySize" style="width:100%">크기 적용</button></div>
+  </div>
+  <div class="hint">크기를 바꿔도 오른쪽 아래(1단 1코) 기준으로 그림이 유지돼요.</div>
+  <div class="grid" style="margin-top:12px">
+    <div><label>뜨는 방식</label>
+      <select id="stylePick"><option value="flat">평면뜨기 (왕복)</option><option value="round">원통뜨기</option></select></div>
+    <div><label>뒷실 경고 기준 (연속 코)</label><input id="floatLimit" type="number" inputmode="numeric" min="2" max="20"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>반복 미리보기</h2>
+  <div id="pvWrap"><canvas id="pv"></canvas></div>
+  <div class="hint" id="pvHint"></div>
+</section>
+
+<section class="card">
+  <h2>확인</h2>
+  <div id="stats" class="hint" style="margin:0 0 8px"></div>
+  <div class="warns" id="warns"></div>
+</section>
+
+<section class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:10px">
+    <h2 style="margin:0">글 도안</h2>
+    <button class="btn ghost small" id="copyWritten">텍스트 복사</button>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="hint" id="writtenNote" style="margin:0 0 8px"></div>
+  <div class="written" id="written"></div>
+</section>
+
+<section class="card">
+  <h2>저장 · 백업</h2>
+  <div class="tools">
+    <button class="btn small" id="pngBtn">차트 이미지 저장</button>
+    <button class="btn ghost small" id="exportBtn">무늬 백업 내보내기</button>
+    <button class="btn ghost small" id="importBtn">백업 불러오기</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+  <div class="hint">게이지 계산 페이지의 백업 파일도 불러올 수 있어요.</div>
+</section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'knit.charts.v1', KEY_INPUTS = 'knit.inputs.v1';
+const LET = ['A','B','C','D','E','F'];
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- 기본 무늬 ---------- */
+const CREAM = '#f4efe6', RED = '#b5523b', YELLOW = '#e8b84a', NAVY = '#2f4a6b', GREEN = '#5f7f5a';
+const PRESETS = [
+  { name:'하트', palette:[CREAM, RED], rows:[
+    '...........','..xx...xx..','.xxxx.xxxx.','.xxxxxxxxx.','.xxxxxxxxx.',
+    '..xxxxxxx..','...xxxxx...','....xxx....','.....x.....','...........'] },
+  { name:'꽃', palette:[CREAM, RED, YELLOW], rows:[
+    '...........','....xxx....','...xxxxx...','.xx.xxx.xx.','xxxxoooxxxx','xxxxoooxxxx',
+    'xxxxoooxxxx','.xx.xxx.xx.','...xxxxx...','....xxx....','...........'] },
+  { name:'눈꽃', palette:[NAVY, CREAM], rows:[
+    '....x....','.x..x..x.','..x.x.x..','...xxx...','xxxxxxxxx','...xxx...','..x.x.x..','.x..x..x.','....x....'] },
+  { name:'다이아몬드', palette:[CREAM, GREEN], rows:[
+    '....x....','...x.x...','..x...x..','.x.....x.','x.......x','.x.....x.','..x...x..','...x.x...','....x....'] },
+  { name:'체크 (격자)', palette:[CREAM, NAVY], rows:[
+    'xxxx....','xxxx....','xxxx....','xxxx....','....xxxx','....xxxx','....xxxx','....xxxx'] },
+  { name:'지그재그', palette:[CREAM, RED], rows:['xx....xx','.xx..xx.','..xxxx..','...xx...'] },
+  { name:'스트라이프 (4단)', palette:[CREAM, NAVY], rows:['xxxx','xxxx','....','....'] }
+];
+function fromPreset(p){
+  const map = {'.':0, 'x':1, 'o':2};
+  const w = p.rows[0].length, h = p.rows.length;
+  const cells = []; p.rows.forEach(r => [...r].forEach(ch => cells.push(map[ch] ?? 0)));
+  return { id:uid(), name:p.name, w, h, cells, palette:p.palette.slice(), style:'flat', floatLimit:5, updated:Date.now() };
+}
+function blank(name, w=20, h=20){
+  return { id:uid(), name, w, h, cells:new Array(w*h).fill(0), palette:[CREAM, RED], style:'flat', floatLimit:5, updated:Date.now() };
+}
+
+/* ---------- 저장소 ---------- */
+let db = store.get(KEY, null);
+if(!db || !Array.isArray(db.charts)) db = { charts:[], current:null };
+if(!db.charts.length){ const c = fromPreset(PRESETS[0]); db.charts.push(c); db.current = c.id; }
+let chart = db.charts.find(c => c.id === db.current) || db.charts[0];
+db.current = chart.id;
+function persist(){ chart.updated = Date.now(); store.set(KEY, db); }
+
+/* ---------- 상태 ---------- */
+const ui = { tool:'pen', color:1, sym:'none', mode:'draw', view:'square', cw:20 };
+let undo = [], redo = [], clip = null, sel = null, drag = null, lay = null, warnRows = new Set();
+
+function gaugeInfo(){
+  const g = store.get(KEY_INPUTS, {});
+  const over = parseFloat(g.over) > 0 ? parseFloat(g.over) : 10;
+  const s = parseFloat(g.sts), r = parseFloat(g.rows);
+  if(s > 0 && r > 0) return { a: s/r, known:true, s10: s*10/over, r10: r*10/over };
+  return { a: 22/30, known:false, s10:22, r10:30 };
+}
+
+/* ---------- 실행 취소 ---------- */
+const snap = () => ({ w:chart.w, h:chart.h, cells:chart.cells.slice(), palette:chart.palette.slice() });
+function restore(s){ chart.w = s.w; chart.h = s.h; chart.cells = s.cells.slice(); chart.palette = s.palette.slice(); }
+function pushUndo(s){ undo.push(s || snap()); if(undo.length > 60) undo.shift(); redo = []; }
+$('undoBtn').onclick = () => { if(!undo.length) return; redo.push(snap()); restore(undo.pop()); afterStructural(); };
+$('redoBtn').onclick = () => { if(!redo.length) return; undo.push(snap()); restore(redo.pop()); afterStructural(); };
+function afterStructural(){ if(ui.color >= chart.palette.length) ui.color = chart.palette.length - 1; sel = null; updSelbar(); syncSettings(); renderPal(); commit(); }
+
+/* ---------- 칸 조작 ---------- */
+const inb = (x, y) => x >= 0 && y >= 0 && x < chart.w && y < chart.h;
+function symPts(x, y){
+  const w = chart.w, h = chart.h, p = [[x, y]];
+  if(ui.sym === 'lr' || ui.sym === 'both') p.push([w-1-x, y]);
+  if(ui.sym === 'ud' || ui.sym === 'both') p.push([x, h-1-y]);
+  if(ui.sym === 'both') p.push([w-1-x, h-1-y]);
+  return p;
+}
+function setCell(x, y, v){ symPts(x, y).forEach(([a, b]) => { if(inb(a, b)) chart.cells[b*chart.w + a] = v; }); }
+function line(x0, y0, x1, y1, fn){
+  const dx = Math.abs(x1-x0), dy = -Math.abs(y1-y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  for(let i = 0; i < 2000; i++){
+    fn(x0, y0); if(x0 === x1 && y0 === y1) break;
+    const e2 = 2*err; if(e2 >= dy){ err += dy; x0 += sx; } if(e2 <= dx){ err += dx; y0 += sy; }
+  }
+}
+function flood(x, y, v){
+  const w = chart.w, t = chart.cells[y*w + x]; if(t === v) return;
+  const st = [[x, y]];
+  while(st.length){
+    const [a, b] = st.pop();
+    if(!inb(a, b) || chart.cells[b*w + a] !== t) continue;
+    chart.cells[b*w + a] = v;
+    st.push([a+1, b], [a-1, b], [a, b+1], [a, b-1]);
+  }
+}
+const normSel = () => sel && { x0:Math.min(sel.x0, sel.x1), x1:Math.max(sel.x0, sel.x1), y0:Math.min(sel.y0, sel.y1), y1:Math.max(sel.y0, sel.y1) };
+
+/* ---------- 그리기 ---------- */
+function layout(c, cw, ch){
+  const lm = 30, rm = 30, tm = 6, bm = 22;
+  return { lm, rm, tm, bm, cw, ch, W: lm + c.w*cw + rm, H: tm + c.h*ch + bm };
+}
+function drawChart(ctx, c, L, o){
+  const { lm, tm, cw, ch } = L, gw = c.w*cw, gh = c.h*ch;
+  for(let y = 0; y < c.h; y++) for(let x = 0; x < c.w; x++){
+    ctx.fillStyle = c.palette[c.cells[y*c.w + x]] || '#fff';
+    ctx.fillRect(lm + x*cw, tm + y*ch, cw + .5, ch + .5);
+  }
+  const stroke = (n, x0, y0, x1, y1) => {
+    ctx.strokeStyle = n % 10 === 0 ? 'rgba(0,0,0,.62)' : n % 5 === 0 ? 'rgba(0,0,0,.4)' : 'rgba(0,0,0,.16)';
+    ctx.lineWidth = n % 5 === 0 ? 1.3 : .7;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  };
+  for(let k = 0; k <= c.w; k++){ const x = lm + k*cw; stroke(c.w - k, x, tm, x, tm + gh); }
+  for(let j = 0; j <= c.h; j++){ const y = tm + j*ch; stroke(c.h - j, lm, y, lm + gw, y); }
+  if(o.numbers !== false){
+    const fs = clamp(Math.floor(Math.min(cw, ch)*.72), 8, 11);
+    ctx.font = fs + 'px -apple-system,BlinkMacSystemFont,sans-serif'; ctx.textBaseline = 'middle'; ctx.fillStyle = o.ink;
+    const allRows = ch >= 10;
+    for(let y = 0; y < c.h; y++){
+      const r = c.h - y; if(!(allRows || r % 5 === 0 || r === 1)) continue;
+      const cy = tm + y*ch + ch/2, right = c.style !== 'flat' || r % 2 === 1;
+      if(right){ ctx.textAlign = 'left'; ctx.fillText(r, lm + gw + 4, cy); }
+      else { ctx.textAlign = 'right'; ctx.fillText(r, lm - 4, cy); }
+    }
+    const allSts = cw >= 15;
+    ctx.textAlign = 'center';
+    for(let x = 0; x < c.w; x++){
+      const s = c.w - x; if(!(allSts || s % 5 === 0 || s === 1)) continue;
+      ctx.fillText(s, lm + x*cw + cw/2, tm + gh + 11);
+    }
+  }
+  if(o.warnRows) o.warnRows.forEach(r => {
+    const y = c.h - r; ctx.fillStyle = '#d64545';
+    ctx.beginPath(); ctx.arc(5, tm + y*ch + ch/2, 3, 0, 7); ctx.fill();
+  });
+  if(o.sel){
+    const s = o.sel; ctx.save(); ctx.setLineDash([5, 3]); ctx.strokeStyle = '#1f6fd6'; ctx.lineWidth = 2;
+    ctx.strokeRect(lm + s.x0*cw, tm + s.y0*ch, (s.x1 - s.x0 + 1)*cw, (s.y1 - s.y0 + 1)*ch); ctx.restore();
+  }
+}
+const cv = $('cv');
+function renderCanvas(){
+  const g = gaugeInfo(), ch = ui.view === 'gauge' ? ui.cw*g.a : ui.cw;
+  lay = layout(chart, ui.cw, ch);
+  const dpr = window.devicePixelRatio || 1, W = Math.round(lay.W*dpr), H = Math.round(lay.H*dpr);
+  if(cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; cv.style.width = lay.W + 'px'; cv.style.height = lay.H + 'px'; }
+  const ctx = cv.getContext('2d'); if(!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, lay.W, lay.H);
+  drawChart(ctx, chart, lay, { ink:getComputedStyle(document.body).color, warnRows, sel:normSel() });
+}
+
+/* ---------- 포인터 ---------- */
+function cellAt(e, clampIt){
+  const r = cv.getBoundingClientRect();
+  let x = Math.floor((e.clientX - r.left - lay.lm)/lay.cw), y = Math.floor((e.clientY - r.top - lay.tm)/lay.ch);
+  if(clampIt){ x = clamp(x, 0, chart.w-1); y = clamp(y, 0, chart.h-1); }
+  else if(!inb(x, y)) return null;
+  return { x, y };
+}
+function showInfo(p){
+  if(!p){ $('info').textContent = ''; return; }
+  const v = chart.cells[p.y*chart.w + p.x];
+  $('info').textContent = `${chart.h - p.y}단 · ${chart.w - p.x}코째 · 색 ${LET[v]}`;
+}
+function shape(p){
+  chart.cells = drag.base.slice();
+  const s = drag.start;
+  if(drag.t === 'line') line(s.x, s.y, p.x, p.y, (x, y) => setCell(x, y, drag.v));
+  else for(let y = Math.min(s.y, p.y); y <= Math.max(s.y, p.y); y++)
+         for(let x = Math.min(s.x, p.x); x <= Math.max(s.x, p.x); x++) setCell(x, y, drag.v);
+  renderCanvas();
+}
+const CLAMPED = ['line', 'rect', 'select'];
+cv.addEventListener('pointerdown', e => {
+  if(ui.mode !== 'draw') return;
+  const t = ui.tool, p = cellAt(e, CLAMPED.includes(t)); if(!p) return;
+  e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  const v = t === 'eraser' ? 0 : ui.color;
+  if(t === 'pen' || t === 'eraser'){ pushUndo(); setCell(p.x, p.y, v); drag = { t, v, last:p }; renderCanvas(); }
+  else if(t === 'fill'){ pushUndo(); symPts(p.x, p.y).forEach(([x, y]) => { if(inb(x, y)) flood(x, y, v); }); commit(); }
+  else if(t === 'line' || t === 'rect'){ const base = chart.cells.slice(); pushUndo(); drag = { t, v, start:p, base }; shape(p); }
+  else if(t === 'select'){ drag = { t }; sel = { x0:p.x, y0:p.y, x1:p.x, y1:p.y }; renderCanvas(); updSelbar(); }
+  else if(t === 'paste' && clip){ pushUndo(); stamp(p); commit(); }
+  showInfo(p);
+});
+cv.addEventListener('pointermove', e => {
+  if(!lay) return;
+  const p = cellAt(e, !!drag && CLAMPED.includes(drag.t));
+  if(p) showInfo(p);
+  if(!drag || !p) return;
+  if(drag.t === 'pen' || drag.t === 'eraser'){
+    line(drag.last.x, drag.last.y, p.x, p.y, (x, y) => setCell(x, y, drag.v)); drag.last = p; renderCanvas();
+  } else if(drag.t === 'line' || drag.t === 'rect') shape(p);
+  else if(drag.t === 'select'){ sel.x1 = p.x; sel.y1 = p.y; renderCanvas(); }
+});
+function endDrag(){
+  if(!drag) return;
+  const t = drag.t; drag = null;
+  if(t === 'select') updSelbar(); else commit();
+}
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+
+/* ---------- 선택 영역 ---------- */
+function updSelbar(){ $('selbar').classList.toggle('on', !!sel); }
+function stamp(p){
+  for(let j = 0; j < clip.h; j++) for(let i = 0; i < clip.w; i++){
+    const x = p.x + i, y = p.y + j; if(inb(x, y)) chart.cells[y*chart.w + x] = clip.data[j*clip.w + i];
+  }
+}
+function selCells(fn){ const s = normSel(); for(let y = s.y0; y <= s.y1; y++) for(let x = s.x0; x <= s.x1; x++) fn(x, y, s); }
+$('selCopy').onclick = () => {
+  const s = normSel(), w = s.x1 - s.x0 + 1, h = s.y1 - s.y0 + 1, data = [];
+  selCells((x, y) => data.push(chart.cells[y*chart.w + x]));
+  clip = { w, h, data };
+  $('pasteTool').disabled = false; setTool('paste');
+  $('info').textContent = `${w}코 × ${h}단 복사됨 · 칸을 누르면 그 위치를 왼쪽 위로 붙여넣어요`;
+};
+function flip(horizontal){
+  pushUndo(); const s = normSel(), old = chart.cells.slice();
+  selCells((x, y) => {
+    const sx = horizontal ? s.x0 + s.x1 - x : x, sy = horizontal ? y : s.y0 + s.y1 - y;
+    chart.cells[y*chart.w + x] = old[sy*chart.w + sx];
+  });
+  commit();
+}
+$('selFlipH').onclick = () => flip(true);
+$('selFlipV').onclick = () => flip(false);
+$('selFill').onclick = () => { pushUndo(); selCells((x, y) => chart.cells[y*chart.w + x] = ui.color); commit(); };
+$('selClear').onclick = () => { pushUndo(); selCells((x, y) => chart.cells[y*chart.w + x] = 0); commit(); };
+$('selNone').onclick = () => { sel = null; updSelbar(); renderCanvas(); };
+
+/* ---------- 도구 · 옵션 ---------- */
+function setTool(t){
+  ui.tool = t;
+  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  if(t !== 'select' && t !== 'paste'){ sel = null; updSelbar(); renderCanvas(); }
+}
+document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+$('modeBtn').onclick = () => {
+  ui.mode = ui.mode === 'draw' ? 'move' : 'draw';
+  $('stage').classList.toggle('draw', ui.mode === 'draw');
+  $('modeBtn').textContent = ui.mode === 'draw' ? '✋ 이동 모드' : '✏️ 그리기 모드';
+  $('modeBtn').classList.toggle('on', ui.mode === 'move');
+};
+$('zoomIn').onclick = () => { ui.cw = clamp(ui.cw + 4, 6, 48); renderCanvas(); };
+$('zoomOut').onclick = () => { ui.cw = clamp(ui.cw - 4, 6, 48); renderCanvas(); };
+$('symPick').onchange = e => ui.sym = e.target.value;
+$('viewPick').onchange = e => { ui.view = e.target.value; renderCanvas(); renderPreviewHint(); };
+
+/* ---------- 팔레트 ---------- */
+const DEFAULT_ADD = [YELLOW, NAVY, GREEN, '#8a5a9e', '#3a3a3a', '#d98ca0'];
+function textOn(hex){
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (r*299 + g*587 + b*114)/1000 > 150 ? '#2b2622' : '#ffffff';
+}
+function renderPal(){
+  $('pal').innerHTML = chart.palette.map((c, i) => `<div class="chip ${i === ui.color ? 'on' : ''}">
+      <button data-ci="${i}" style="background:${c};color:${textOn(c)}">${LET[i]}</button>
+      <input type="color" data-cc="${i}" value="${c}"></div>`).join('')
+    + (chart.palette.length < 6 ? '<button class="tool" id="addColor">＋ 색</button>' : '')
+    + (ui.color > 0 ? '<button class="tool" id="delColor">선택 색 삭제</button>' : '');
+}
+$('pal').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.ci !== undefined){ ui.color = +b.dataset.ci; if(ui.tool === 'eraser') setTool('pen'); renderPal(); }
+  else if(b.id === 'addColor'){
+    pushUndo(); const used = new Set(chart.palette);
+    chart.palette.push(DEFAULT_ADD.find(c => !used.has(c)) || '#888888');
+    ui.color = chart.palette.length - 1; renderPal(); commit();
+  } else if(b.id === 'delColor'){
+    const i = ui.color; if(i <= 0) return;
+    if(!confirm(`${LET[i]} 색을 삭제할까요? 이 색으로 칠한 칸은 바탕색(A)이 돼요.`)) return;
+    pushUndo();
+    chart.palette.splice(i, 1);
+    chart.cells = chart.cells.map(v => v === i ? 0 : v > i ? v - 1 : v);
+    ui.color = Math.min(i, chart.palette.length - 1); renderPal(); commit();
+  }
+});
+let colorUndoPushed = false;
+$('pal').addEventListener('input', e => {
+  const i = e.target.dataset.cc; if(i === undefined) return;
+  if(!colorUndoPushed){ pushUndo(); colorUndoPushed = true; }
+  chart.palette[+i] = e.target.value;
+  const btn = $('pal').querySelector(`[data-ci="${i}"]`);
+  if(btn){ btn.style.background = e.target.value; btn.style.color = textOn(e.target.value); }
+  renderCanvas();
+});
+$('pal').addEventListener('change', e => { if(e.target.dataset.cc !== undefined){ colorUndoPushed = false; commit(); } });
+
+/* ---------- 설정 ---------- */
+function syncSettings(){
+  $('setW').value = chart.w; $('setH').value = chart.h;
+  $('stylePick').value = chart.style || 'flat'; $('floatLimit').value = chart.floatLimit || 5;
+}
+$('applySize').onclick = () => {
+  const nw = clamp(parseInt($('setW').value) || chart.w, 1, 120), nh = clamp(parseInt($('setH').value) || chart.h, 1, 120);
+  if(nw === chart.w && nh === chart.h) return;
+  pushUndo();
+  const ow = chart.w, oh = chart.h, old = chart.cells, cells = new Array(nw*nh).fill(0);
+  for(let y = 0; y < nh; y++) for(let x = 0; x < nw; x++){
+    const ox = x - (nw - ow), oy = y - (nh - oh);
+    if(ox >= 0 && oy >= 0 && ox < ow && oy < oh) cells[y*nw + x] = old[oy*ow + ox];
+  }
+  chart.w = nw; chart.h = nh; chart.cells = cells; sel = null; updSelbar(); fitZoom(); syncSettings(); commit();
+};
+$('stylePick').onchange = e => { chart.style = e.target.value; commit(); };
+$('floatLimit').oninput = e => { const v = parseInt(e.target.value); if(v >= 2){ chart.floatLimit = v; commit(); } };
+
+/* ---------- 분석 ---------- */
+function rowData(r){ const y = chart.h - r; return chart.cells.slice(y*chart.w, (y+1)*chart.w); }
+function runs(arr){ const out = []; arr.forEach(v => { const l = out[out.length-1]; if(l && l[0] === v) l[1]++; else out.push([v, 1]); }); return out; }
+function analyze(){
+  const lim = chart.floatLimit || 5, list = []; let maxColors = 0;
+  for(let r = 1; r <= chart.h; r++){
+    const row = rowData(r), used = new Set(row);
+    maxColors = Math.max(maxColors, used.size);
+    if(used.size >= 3) list.push({ r, msg:`${r}단: 한 단에 ${used.size}색 (${[...used].sort().map(v => LET[v]).join('·')}) — 페어아일은 보통 한 단에 2색까지가 편해요` });
+    if(used.size >= 2){
+      const long = runs(row).filter(([, n]) => n > lim).sort((a, b) => b[1] - a[1])[0];
+      if(long) list.push({ r, msg:`${r}단: ${LET[long[0]]}색이 ${long[1]}코 연속 — 다른 색 실이 뒤로 ${long[1]}코 걸쳐요. 중간에 실을 걸어 고정하세요` });
+    }
+  }
+  return { list, maxColors, usedAll: new Set(chart.cells).size };
+}
+function renderAnalysis(){
+  const a = analyze();
+  warnRows = new Set(a.list.map(x => x.r));
+  $('stats').textContent = `${chart.w}코 × ${chart.h}단 · 사용 색 ${a.usedAll}개 · 한 단 최대 ${a.maxColors}색`;
+  $('warns').innerHTML = a.list.length
+    ? `<div class="note warn" style="margin-top:0">확인할 곳 ${a.list.length}개 · 차트 왼쪽에 빨간 점으로 표시돼요</div>` + a.list.map(x => `<div>${esc(x.msg)}</div>`).join('')
+    : '<div class="note ok" style="margin:0">배색 문제없이 뜰 수 있는 차트예요.</div>';
+}
+
+/* ---------- 글 도안 ---------- */
+function writtenRows(){
+  const flat = (chart.style || 'flat') === 'flat', out = [];
+  for(let r = 1; r <= chart.h; r++){
+    const row = rowData(r), rtl = !flat || r % 2 === 1;
+    const seq = rtl ? row.slice().reverse() : row;
+    const label = flat ? `${r}단 (${r % 2 ? '겉' : '안'})` : `${r}단`;
+    out.push({ label, text: runs(seq).map(([v, n]) => `${LET[v]} ${n}`).join(', '), total: row.length });
+  }
+  return out;
+}
+function renderWritten(){
+  const flat = (chart.style || 'flat') === 'flat';
+  $('legend').innerHTML = chart.palette.map((c, i) => `<span><span class="sw" style="background:${c}"></span>${LET[i]}${i === 0 ? ' (바탕)' : ''}</span>`).join('');
+  $('writtenNote').textContent = flat
+    ? '홀수단은 겉면에서 겉뜨기로 차트 오른쪽→왼쪽, 짝수단은 안면에서 안뜨기로 왼쪽→오른쪽 순서예요.'
+    : '모든 단을 겉면에서 차트 오른쪽→왼쪽으로 떠요.';
+  $('written').innerHTML = writtenRows().map(x => `<div class="r"><b>${x.label}</b><span>${x.text}</span></div>`).join('');
+}
+$('copyWritten').onclick = () => {
+  const txt = `${chart.name} (${chart.w}코 × ${chart.h}단)\n` + chart.palette.map((c, i) => `${LET[i]}: ${c}`).join(' / ') + '\n\n'
+    + writtenRows().map(x => `${x.label}: ${x.text}`).join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject())
+    .then(() => alert('글 도안을 복사했어요.'), () => alert('복사하지 못했어요. 길게 눌러 직접 선택해 주세요.'));
+};
+
+/* ---------- 반복 미리보기 ---------- */
+function renderPreviewHint(){
+  const g = gaugeInfo();
+  $('pvHint').textContent = g.known
+    ? `게이지 ${Math.round(g.s10*10)/10}코 ${Math.round(g.r10*10)/10}단 기준 실제 비율 · 무늬 1회 ≈ ${(chart.w/g.s10*10).toFixed(1)}cm × ${(chart.h/g.r10*10).toFixed(1)}cm`
+    : '게이지 계산 페이지에 게이지를 넣으면 실제 비율로 보여줘요. (지금은 22코 30단 가정)';
+}
+function renderPreview(){
+  const g = gaugeInfo(), pv = $('pv');
+  const W = Math.max(240, Math.min(640, $('pvWrap').clientWidth || 320));
+  const tx = Math.max(2, Math.min(8, Math.round(48/chart.w) || 2)), ty = Math.max(2, Math.min(8, Math.round(36/chart.h) || 2));
+  const cw = W/(chart.w*tx), ch = cw*g.a, H = Math.round(chart.h*ty*ch);
+  const dpr = window.devicePixelRatio || 1;
+  pv.width = Math.round(W*dpr); pv.height = Math.round(H*dpr); pv.style.width = W + 'px'; pv.style.height = H + 'px';
+  const ctx = pv.getContext('2d'); if(!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for(let Y = 0; Y < chart.h*ty; Y++) for(let X = 0; X < chart.w*tx; X++){
+    ctx.fillStyle = chart.palette[chart.cells[(Y % chart.h)*chart.w + (X % chart.w)]] || '#fff';
+    ctx.fillRect(X*cw, Y*ch, cw + .6, ch + .6);
+  }
+  renderPreviewHint();
+}
+
+/* ---------- 무늬 관리 ---------- */
+function renderPick(){
+  $('chartPick').innerHTML = db.charts.map(c => `<option value="${c.id}" ${c.id === chart.id ? 'selected' : ''}>${esc(c.name)} (${c.w}×${c.h})</option>`).join('');
+  $('libPick').innerHTML = '<option value="">선택하면 새 무늬로 추가돼요</option>' + PRESETS.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+}
+function switchTo(id){
+  chart = db.charts.find(c => c.id === id) || db.charts[0]; db.current = chart.id;
+  undo = []; redo = []; sel = null; updSelbar();
+  ui.color = Math.min(1, chart.palette.length - 1);
+  store.set(KEY, db); fitZoom(); syncSettings(); renderPal(); renderPick(); commit();
+}
+function addChart(c){ db.charts.push(c); switchTo(c.id); }
+$('chartPick').onchange = e => switchTo(e.target.value);
+$('libPick').onchange = e => { if(e.target.value !== '') addChart(fromPreset(PRESETS[+e.target.value])); };
+$('newChart').onclick = () => {
+  const name = prompt('새 무늬 이름', '무늬 ' + (db.charts.length + 1)); if(name === null) return;
+  addChart(blank(name.trim() || '새 무늬'));
+};
+$('dupChart').onclick = () => addChart(Object.assign(JSON.parse(JSON.stringify(chart)), { id:uid(), name:chart.name + ' 복사' }));
+$('renChart').onclick = () => { const n = prompt('무늬 이름', chart.name); if(n && n.trim()){ chart.name = n.trim(); persist(); renderPick(); } };
+$('delChart').onclick = () => {
+  if(!confirm(`'${chart.name}' 무늬를 삭제할까요?`)) return;
+  db.charts = db.charts.filter(c => c.id !== chart.id);
+  if(!db.charts.length) db.charts.push(blank('무늬 1'));
+  switchTo(db.charts[0].id);
+};
+
+/* ---------- 저장 · 백업 ---------- */
+$('pngBtn').onclick = () => {
+  const g = gaugeInfo(), cw = 20, ch = ui.view === 'gauge' ? 20*g.a : 20, L = layout(chart, cw, ch);
+  const top = 36, foot = 34, W = Math.max(L.W, 340), H = L.H + top + foot, s = 2;
+  const c = document.createElement('canvas'); c.width = W*s; c.height = H*s;
+  const x = c.getContext('2d'); x.scale(s, s);
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#2b2622'; x.font = 'bold 15px -apple-system,sans-serif'; x.textBaseline = 'alphabetic';
+  x.fillText(`${chart.name}  (${chart.w}코 × ${chart.h}단)`, 10, 24);
+  x.save(); x.translate(0, top); drawChart(x, chart, L, { ink:'#2b2622' }); x.restore();
+  let lx = 10; const ly = top + L.H + 8;
+  x.font = '12px -apple-system,sans-serif';
+  chart.palette.forEach((col, i) => {
+    x.fillStyle = col; x.fillRect(lx, ly, 14, 14); x.strokeStyle = 'rgba(0,0,0,.3)'; x.strokeRect(lx, ly, 14, 14);
+    x.fillStyle = '#2b2622'; x.fillText(LET[i], lx + 18, ly + 12); lx += 40;
+  });
+  const a = document.createElement('a'); a.download = (chart.name || 'chart') + '.png'; a.href = c.toDataURL('image/png');
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({ charts: db }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'knitting-charts-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const data = JSON.parse(rd.result), src = data.charts && Array.isArray(data.charts.charts) ? data.charts.charts : [];
+      const ids = new Set(db.charts.map(c => c.id));
+      const add = src.filter(c => c && c.id && Array.isArray(c.cells) && !ids.has(c.id));
+      db.charts = db.charts.concat(add); store.set(KEY, db); renderPick();
+      alert(`무늬 ${add.length}개를 불러왔어요.`);
+    }catch(err){ alert('백업 파일을 읽지 못했어요.'); }
+    e.target.value = '';
+  };
+  rd.readAsText(f);
+};
+
+/* ---------- 공통 ---------- */
+function fitZoom(){
+  const avail = ($('stage').clientWidth || 340) - 64;
+  ui.cw = clamp(Math.floor(avail/chart.w), 10, 30);
+}
+function commit(){ persist(); renderAnalysis(); renderCanvas(); renderPreview(); renderWritten(); }
+window.addEventListener('storage', e => { if(e.key === KEY_INPUTS){ renderCanvas(); renderPreview(); } });
+window.addEventListener('resize', () => renderPreview());
+
+fitZoom(); syncSettings(); renderPal(); renderPick(); commit();
+</script>
+</body>
+</html>
