@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ayo's Knitting">
+<meta name="theme-color" content="#f7f3ee">
+<title>Ayo's Knitting</title>
+<style>
+:root{
+  --bg:#f7f3ee;--card:#fffdf9;--ink:#2b2622;--muted:#7a6f66;--line:#e6ddd2;
+  --accent:#b5523b;--accent-soft:#f3e1d9;--ok:#4f7a5a;--ok-soft:#e2eee4;--warn:#9a6b12;--warn-soft:#f6ebd2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1917;--card:#26221f;--ink:#f1ebe4;--muted:#a89d92;--line:#3a332e;
+    --accent:#e08a6f;--accent-soft:#3a2a24;--ok:#8fc49c;--ok-soft:#24342a;--warn:#e0b45e;--warn-soft:#3a3020;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1917;--card:#26221f;--ink:#f1ebe4;--muted:#a89d92;--line:#3a332e;
+  --accent:#e08a6f;--accent-soft:#3a2a24;--ok:#8fc49c;--ok-soft:#24342a;--warn:#e0b45e;--warn-soft:#3a3020;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+header{padding:8px 2px 14px}
+header h1{margin:0;font-size:22px;letter-spacing:-.3px}
+header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:16px}
+.card h3{margin:16px 0 8px;font-size:14px;color:var(--muted);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid.three{grid-template-columns:1fr 1fr 1fr}
+.full{grid-column:1/-1}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:16px;font-family:inherit}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px;position:sticky;top:6px;z-index:5}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 4px;border-radius:9px;font-size:14px;font-family:inherit;cursor:pointer}
+.tabs button.on{background:var(--accent);color:#fff;font-weight:600}
+.tab{display:none}.tab.on{display:block}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:6px 10px;font-size:13px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.result{display:grid;gap:8px}
+.cand{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px}
+.cand.best{border-color:var(--accent);background:var(--accent-soft)}
+.cand .big{font-size:22px;font-weight:700}
+.cand .sub{font-size:12px;color:var(--muted)}
+.cand .right{text-align:right;font-size:14px}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+.note{font-size:13px;padding:10px 12px;border-radius:10px;margin:10px 0}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:600}
+tr.cur td{background:var(--accent-soft);font-weight:700}
+.sw{padding:12px 0;border-bottom:1px solid var(--line)}
+.sw:last-child{border-bottom:0}
+.sw .t{font-weight:600}
+.sw .m{font-size:13px;color:var(--muted)}
+.sw .acts{display:flex;gap:6px;margin-top:8px}
+.big-target{font-size:24px;font-weight:700;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Ayo's Knitting</h1>
+  <p>대바늘 도안 도우미 · 1단계: 게이지 계산</p>
+</header>
+
+<!-- 공통 게이지 -->
+<section class="card">
+  <h2>내 게이지</h2>
+  <div class="grid">
+    <div class="full"><label>실 이름</label><input id="yarn" data-save placeholder="예: 메리노 울 DK"></div>
+    <div><label>뜨기 방법</label>
+      <select id="stitchType" data-save>
+        <option>메리야스뜨기</option><option>가터뜨기</option><option>고무단</option><option>멍석뜨기</option><option>꽈배기</option><option>배색</option><option>기타</option>
+      </select></div>
+    <div><label>측정 길이 (cm)</label><input id="over" type="number" inputmode="decimal" data-save value="10"></div>
+    <div><label>바늘 (mm)</label><input id="needle" type="number" inputmode="decimal" step="0.05" data-save placeholder="4.0"></div>
+    <div><label>일본식 호로 선택</label><select id="hoPick"></select></div>
+    <div><label>콧수</label><input id="sts" type="number" inputmode="decimal" data-save placeholder="22"></div>
+    <div><label>단수</label><input id="rows" type="number" inputmode="decimal" data-save placeholder="30"></div>
+  </div>
+  <div class="hint" id="gaugeHint"></div>
+</section>
+
+<nav class="tabs">
+  <button data-tab="calc" class="on">콧수·단수</button>
+  <button data-tab="needle">호수 예측</button>
+  <button data-tab="swatch">스와치 기록</button>
+</nav>
+
+<!-- 탭1: 계산 -->
+<section class="tab on" id="tab-calc">
+  <div class="card">
+    <h2>완성 치수</h2>
+    <div class="grid three">
+      <div><label>너비 (cm)</label><input id="width" type="number" inputmode="decimal" data-save placeholder="50"></div>
+      <div><label>길이 (cm)</label><input id="length" type="number" inputmode="decimal" data-save placeholder="160"></div>
+      <div><label>여유분 (cm)</label><input id="ease" type="number" inputmode="decimal" data-save placeholder="0"></div>
+    </div>
+    <h3>무늬 반복 (없으면 비워두기)</h3>
+    <div class="grid three">
+      <div><label>반복 코</label><input id="rep" type="number" inputmode="numeric" data-save placeholder="8"></div>
+      <div><label>+ 추가 코</label><input id="repPlus" type="number" inputmode="numeric" data-save placeholder="0"></div>
+      <div><label>가장자리 (한쪽)</label><input id="selv" type="number" inputmode="numeric" data-save placeholder="0"></div>
+      <div><label>반복 단</label><input id="rowRep" type="number" inputmode="numeric" data-save placeholder="12"></div>
+    </div>
+    <div class="hint">예: "8의 배수 + 2코" 무늬에 양끝 1코씩 → 반복 코 8, 추가 코 2, 가장자리 1</div>
+  </div>
+
+  <div class="card">
+    <h2>코 잡기</h2>
+    <div class="result" id="stsResult"></div>
+    <h3>단수</h3>
+    <div class="result" id="rowsResult"></div>
+  </div>
+</section>
+
+<!-- 탭2: 호수 예측 -->
+<section class="tab" id="tab-needle">
+  <div class="card">
+    <h2>호수별 예상 게이지</h2>
+    <div class="grid">
+      <div><label>콧수 고정 시</label><input id="castOn" type="number" inputmode="numeric" data-save></div>
+      <div><label>단수 고정 시</label><input id="rowCount" type="number" inputmode="numeric" data-save></div>
+    </div>
+    <div class="hint">비워두면 콧수·단수 탭의 추천값을 사용해요. 같은 콧수로 바늘만 바꿨을 때 완성 치수가 어떻게 변하는지 보여줘요.</div>
+    <div id="modelNote"></div>
+    <div id="needleTable"></div>
+  </div>
+  <div class="card">
+    <h2>도안 게이지에 맞추기</h2>
+    <div class="grid">
+      <div><label>도안 콧수 (10cm)</label><input id="targetSts" type="number" inputmode="decimal" data-save placeholder="20"></div>
+      <div><label>도안 단수 (10cm)</label><input id="targetRows" type="number" inputmode="decimal" data-save placeholder="28"></div>
+    </div>
+    <div id="targetResult"></div>
+  </div>
+</section>
+
+<!-- 탭3: 스와치 -->
+<section class="tab" id="tab-swatch">
+  <div class="card">
+    <h2>현재 게이지 기록하기</h2>
+    <label>메모</label>
+    <input id="swMemo" placeholder="예: 세탁 후 측정, 손이 좀 느슨했음">
+    <div style="margin-top:10px"><button class="btn" id="saveSw">기록 저장</button></div>
+    <div class="hint">같은 실·같은 뜨기 방법으로 바늘을 바꿔 2개 이상 기록하면, 호수 예측이 내 손 기준으로 바뀌어요.</div>
+  </div>
+  <div class="card">
+    <h2>기록 목록</h2>
+    <div id="swList"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost small" id="exportBtn">백업 내보내기</button>
+      <button class="btn ghost small" id="importBtn">백업 불러오기</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+</section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY_INPUTS = 'knit.inputs.v1', KEY_SW = 'knit.swatches.v1';
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : NaN; };
+const ok = v => isFinite(v) && v > 0;
+const f1 = v => (Math.round(v*10)/10).toFixed(1);
+const f2 = v => (Math.round(v*100)/100).toString();
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* 바늘 사이즈 */
+const HO = Array.from({length:16}, (_, i) => ({ho:i, mm:+(2.1 + i*0.3).toFixed(1)}));
+const STD = [2,2.25,2.5,2.75,3,3.25,3.5,3.75,4,4.5,5,5.5,6,6.5,7,8,9,10,12];
+const hoOf = mm => { const h = HO.find(x => Math.abs(x.mm - mm) < 0.01); return h ? ` (${h.ho}호)` : ''; };
+$('hoPick').innerHTML = '<option value="">선택</option>' + HO.map(h => `<option value="${h.mm}">${h.ho}호 · ${h.mm}mm</option>`).join('');
+$('hoPick').addEventListener('change', e => { if(e.target.value){ $('needle').value = e.target.value; e.target.value = ''; update(); } });
+
+/* 입력값 저장/복원 */
+const saved = store.get(KEY_INPUTS, {});
+document.querySelectorAll('[data-save]').forEach(el => {
+  if(saved[el.id] !== undefined) el.value = saved[el.id];
+  el.addEventListener('input', update);
+  el.addEventListener('change', update);
+});
+function saveInputs(){
+  const o = {}; document.querySelectorAll('[data-save]').forEach(el => o[el.id] = el.value);
+  store.set(KEY_INPUTS, o);
+}
+
+/* 탭 */
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
+}));
+
+/* 게이지 (10cm 기준으로 환산) */
+function gauge(){
+  const over = ok(num('over')) ? num('over') : 10;
+  const s = num('sts'), r = num('rows'), d = num('needle');
+  return { s10: ok(s) ? s*10/over : NaN, r10: ok(r) ? r*10/over : NaN, d,
+           yarn: $('yarn').value.trim(), type: $('stitchType').value };
+}
+
+/* 반복 단위에 맞춘 후보 */
+function candidates(raw, m, plus, fixed){
+  if(!(m > 1)) return [Math.max(1, Math.round(raw))];
+  const body = raw - plus - fixed;
+  const lo = Math.floor(body/m)*m, hi = Math.ceil(body/m)*m;
+  return [...new Set([lo, hi])].filter(x => x > 0).map(x => x + plus + fixed);
+}
+function renderCands(el, list, perCm, target, unit, m, plus, fixed){
+  if(!list.length){ el.innerHTML = '<div class="empty">값을 입력하면 계산돼요.</div>'; return null; }
+  let best = list[0];
+  list.forEach(n => { if(Math.abs(n/perCm - target) < Math.abs(best/perCm - target)) best = n; });
+  el.innerHTML = list.map(n => {
+    const cm = n/perCm, diff = cm - target;
+    const reps = m > 1 ? `무늬 ${(n - plus - fixed)/m}회 반복 · ` : '';
+    return `<div class="cand ${n===best?'best':''}">
+      <div><span class="big">${n}${unit}</span>${n===best?'<span class="tag">추천</span>':''}
+      <div class="sub">${reps}정확값 ${f1(target*perCm)}${unit}</div></div>
+      <div class="right">완성 ${f1(cm)}cm<div class="sub">${diff>=0?'+':''}${f1(diff)}cm</div></div></div>`;
+  }).join('');
+  return best;
+}
+
+let lastCastOn = NaN, lastRows = NaN;
+function renderCalc(g){
+  const width = num('width'), len = num('length'), ease = num('ease') || 0;
+  const rep = num('rep'), plus = num('repPlus') || 0, selv = num('selv') || 0, rowRep = num('rowRep');
+  const target = width + ease;
+  if(ok(g.s10) && ok(target)){
+    const perCm = g.s10/10;
+    lastCastOn = renderCands($('stsResult'), candidates(target*perCm, rep, plus, selv*2), perCm, target, '코', rep, plus, selv*2);
+  } else { $('stsResult').innerHTML = '<div class="empty">게이지 콧수와 너비를 입력해 주세요.</div>'; lastCastOn = NaN; }
+  if(ok(g.r10) && ok(len)){
+    const perCm = g.r10/10;
+    lastRows = renderCands($('rowsResult'), candidates(len*perCm, rowRep, 0, 0), perCm, len, '단', rowRep, 0, 0);
+  } else { $('rowsResult').innerHTML = '<div class="empty">게이지 단수와 길이를 입력해 주세요.</div>'; lastRows = NaN; }
+}
+
+/* 호수 예측 모델
+   기본: 게이지 ∝ (바늘 지름)^-k  (콧수 k=0.8, 단수 k=0.6 — 일반적인 추정치)
+   개인: 같은 실·같은 뜨기 방법 기록이 바늘 2종 이상이면 로그 회귀로 k를 직접 구함 */
+const K_STS = 0.8, K_ROWS = 0.6;
+function fit(points){ // points: [{d, g}] → ln g = a + s ln d
+  const xs = points.map(p => Math.log(p.d)), ys = points.map(p => Math.log(p.g));
+  const n = xs.length, mx = xs.reduce((a,b)=>a+b)/n, my = ys.reduce((a,b)=>a+b)/n;
+  let sxy = 0, sxx = 0; xs.forEach((x,i) => { sxy += (x-mx)*(ys[i]-my); sxx += (x-mx)**2; });
+  const s = sxy/sxx; return { a: my - s*mx, s };
+}
+function model(g){
+  const same = loadSw().filter(w => w.yarn && g.yarn && w.yarn.toLowerCase() === g.yarn.toLowerCase() && w.type === g.type);
+  const byNeedle = {};
+  same.forEach(w => { (byNeedle[w.needle] = byNeedle[w.needle] || []).push(w); });
+  const needles = Object.keys(byNeedle);
+  const def = {
+    mode:'default',
+    sts: d => g.s10 * Math.pow(g.d/d, K_STS),
+    rows: d => g.r10 * Math.pow(g.d/d, K_ROWS),
+    needleFor: (t, key) => g.d * Math.pow((key==='s'?g.s10:g.r10)/t, 1/(key==='s'?K_STS:K_ROWS))
+  };
+  if(needles.length < 2) return def;
+  const avg = (arr, k) => arr.reduce((a,w)=>a+w[k],0)/arr.length;
+  const pts = needles.map(d => ({ d:+d, s: avg(byNeedle[d],'s10'), r: avg(byNeedle[d],'r10') }));
+  const fs = fit(pts.map(p => ({d:p.d, g:p.s}))), fr = fit(pts.map(p => ({d:p.d, g:p.r})));
+  if(!(fs.s < 0)) return Object.assign(def, {mode:'bad'});
+  const rowsOk = fr.s < 0;
+  return {
+    mode:'personal', count: same.length, kS: -fs.s, kR: rowsOk ? -fr.s : K_ROWS,
+    sts: d => Math.exp(fs.a + fs.s*Math.log(d)),
+    rows: d => rowsOk ? Math.exp(fr.a + fr.s*Math.log(d)) : def.rows(d),
+    needleFor: (t, key) => key==='s' ? Math.exp((Math.log(t) - fs.a)/fs.s)
+                         : (rowsOk ? Math.exp((Math.log(t) - fr.a)/fr.s) : def.needleFor(t,'r'))
+  };
+}
+
+function renderNeedle(g){
+  if(!(ok(g.s10) && ok(g.r10) && ok(g.d))){
+    $('modelNote').innerHTML = ''; $('needleTable').innerHTML = '<div class="empty">바늘·콧수·단수를 모두 입력하면 예측해요.</div>';
+    $('targetResult').innerHTML = ''; return;
+  }
+  const M = model(g);
+  $('modelNote').innerHTML =
+    M.mode === 'personal' ? `<div class="note ok">내 스와치 기록 ${M.count}개로 보정한 예측이에요. (콧수 변화율 ${f2(M.kS)})</div>`
+  : M.mode === 'bad' ? `<div class="note warn">기록끼리 경향이 맞지 않아(굵은 바늘인데 코가 더 촘촘함 등) 일반 추정치를 사용해요. 기록을 확인해 보세요.</div>`
+  : `<div class="note warn">일반적인 추정치예요. 실·손 장력에 따라 차이가 날 수 있으니, 같은 실로 다른 바늘 스와치를 기록하면 정확해져요.</div>`;
+
+  const co = ok(num('castOn')) ? num('castOn') : lastCastOn;
+  const rc = ok(num('rowCount')) ? num('rowCount') : lastRows;
+  $('castOn').placeholder = ok(lastCastOn) ? String(lastCastOn) : '예: 110';
+  $('rowCount').placeholder = ok(lastRows) ? String(lastRows) : '예: 480';
+
+  let sizes = STD.filter(d => Math.abs(d - g.d) <= 1.51);
+  if(!sizes.some(d => Math.abs(d - g.d) < 0.01)) sizes.push(g.d);
+  sizes.sort((a,b) => a-b);
+  const rows = sizes.map(d => {
+    const cur = Math.abs(d - g.d) < 0.01;
+    const s = cur ? g.s10 : M.sts(d), r = cur ? g.r10 : M.rows(d);
+    return `<tr class="${cur?'cur':''}"><td>${f2(d)}mm${hoOf(d)}</td><td>${f1(s)}</td><td>${f1(r)}</td>
+      <td>${ok(co) ? f1(co/(s/10))+'cm' : '–'}</td><td>${ok(rc) ? f1(rc/(r/10))+'cm' : '–'}</td></tr>`;
+  }).join('');
+  $('needleTable').innerHTML = `<table><thead><tr><th>바늘</th><th>콧수/10cm</th><th>단수/10cm</th>
+    <th>너비${ok(co)?' ('+co+'코)':''}</th><th>길이${ok(rc)?' ('+rc+'단)':''}</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  const ts = num('targetSts'), tr = num('targetRows');
+  if(!ok(ts)){ $('targetResult').innerHTML = '<div class="hint">도안에 적힌 게이지를 넣으면 필요한 바늘 굵기를 추정해요.</div>'; return; }
+  const need = M.needleFor(ts, 's');
+  const nearest = STD.concat(HO.map(h=>h.mm)).reduce((a,b) => Math.abs(b-need) < Math.abs(a-need) ? b : a);
+  let html = `<div style="margin-top:12px"><div class="sub" style="font-size:12px;color:var(--muted)">콧수 기준 필요 바늘</div>
+    <div class="big-target">약 ${f2(need)}mm</div>
+    <div class="hint">가까운 바늘: ${f2(nearest)}mm${hoOf(nearest)} → 예상 ${f1(M.sts(nearest))}코 / ${f1(M.rows(nearest))}단</div></div>`;
+  if(ok(tr)){
+    const needR = M.needleFor(tr, 'r');
+    if(Math.abs(needR - need) > 0.5){
+      html += `<div class="note warn">단수 기준으로는 약 ${f2(needR)}mm가 필요해요. 콧수와 단수를 동시에 맞추기 어려우니, 콧수에 맞추고 단수는 길이(cm)로 조절하는 걸 추천해요.</div>`;
+    } else {
+      html += `<div class="note ok">단수 기준(약 ${f2(needR)}mm)과도 비슷해서 이 바늘로 콧수·단수 모두 맞출 수 있을 것 같아요.</div>`;
+    }
+  }
+  $('targetResult').innerHTML = html;
+}
+
+/* 스와치 기록 */
+const loadSw = () => store.get(KEY_SW, []);
+const saveSw = list => store.set(KEY_SW, list);
+function renderSw(){
+  const list = loadSw().slice().sort((a,b) => b.date.localeCompare(a.date));
+  $('swList').innerHTML = list.length ? list.map(w => `<div class="sw">
+      <div class="t">${esc(w.yarn || '이름 없는 실')} · ${esc(w.type)}</div>
+      <div class="m">${f2(w.needle)}mm${hoOf(w.needle)} · ${f1(w.s10)}코 ${f1(w.r10)}단 (10cm) · ${w.date.slice(0,10)}</div>
+      ${w.memo ? `<div class="m">${esc(w.memo)}</div>` : ''}
+      <div class="acts"><button class="btn ghost small" data-load="${w.id}">불러오기</button>
+      <button class="btn ghost small" data-del="${w.id}">삭제</button></div></div>`).join('')
+    : '<div class="empty">아직 기록이 없어요.</div>';
+}
+$('saveSw').addEventListener('click', () => {
+  const g = gauge();
+  if(!(ok(g.s10) && ok(g.r10) && ok(g.d))){ alert('바늘·콧수·단수를 먼저 입력해 주세요.'); return; }
+  const list = loadSw();
+  list.push({ id: Date.now().toString(36), date: new Date().toISOString(), yarn: g.yarn, type: g.type,
+              needle: g.d, s10: +g.s10.toFixed(2), r10: +g.r10.toFixed(2), memo: $('swMemo').value.trim() });
+  saveSw(list); $('swMemo').value = ''; renderSw(); update();
+});
+$('swList').addEventListener('click', e => {
+  const id = e.target.dataset.load || e.target.dataset.del; if(!id) return;
+  const list = loadSw(), w = list.find(x => x.id === id); if(!w) return;
+  if(e.target.dataset.del){
+    if(confirm('이 기록을 삭제할까요?')){ saveSw(list.filter(x => x.id !== id)); renderSw(); update(); }
+  } else {
+    $('yarn').value = w.yarn; $('stitchType').value = w.type; $('needle').value = w.needle;
+    $('over').value = 10; $('sts').value = w.s10; $('rows').value = w.r10;
+    update(); window.scrollTo({top:0, behavior:'smooth'});
+  }
+});
+$('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({swatches: loadSw(), inputs: store.get(KEY_INPUTS, {})}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'knitting-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
+});
+$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', e => {
+  const file = e.target.files[0]; if(!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const data = JSON.parse(rd.result), cur = loadSw(), ids = new Set(cur.map(x => x.id));
+      const add = (data.swatches || []).filter(x => x && x.id && !ids.has(x.id));
+      saveSw(cur.concat(add)); renderSw(); update(); alert(`${add.length}개 기록을 불러왔어요.`);
+    }catch(err){ alert('백업 파일을 읽지 못했어요.'); }
+    e.target.value = '';
+  };
+  rd.readAsText(file);
+});
+
+function update(){
+  saveInputs();
+  const g = gauge();
+  $('gaugeHint').textContent = ok(g.s10) && ok(g.r10)
+    ? `10cm 기준 ${f1(g.s10)}코 ${f1(g.r10)}단 · 1코 ≈ ${f2(10/g.s10)}cm, 1단 ≈ ${f2(10/g.r10)}cm`
+    : '스와치를 떠서 측정한 콧수·단수를 입력해 주세요.';
+  renderCalc(g);
+  renderNeedle(g);
+}
+renderSw();
+update();
+</script>
+</body>
+</html>
